@@ -1,6 +1,7 @@
 import random
 from flask import Flask, request, render_template, redirect, url_for
 import os
+import sys
 import json
 import uuid
 import boto3
@@ -8,14 +9,13 @@ import names
 import logging
 
 app = Flask(__name__)
-log = logging.getLogger('werkzeug')
-log.setLevel(logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
 aws_region = os.getenv("AWS_DEFAULT_REGION", default='eu-west-1')
 
 # --------------------    SNS (Message sending)     ---------------------------
 sns_client = boto3.client('sns', region_name=aws_region)
-dest_topic_name = 'namesTopic'
+dest_topic_name = 'ordersTopic'
 sns_topics_arn = json.loads(os.getenv("COPILOT_SNS_TOPIC_ARNS"))
 topic_arn = sns_topics_arn[dest_topic_name]
 # sns = boto3.resource('sns', region_name=aws_region)
@@ -23,7 +23,7 @@ topic_arn = sns_topics_arn[dest_topic_name]
 
 # ------------------    DynamoDB (NoSQL Database)     -------------------------
 dynamodb = boto3.resource('dynamodb', region_name=aws_region)
-table_name = os.getenv("REQUESTS_TABLE_NAME")
+table_name = os.getenv("ORDERS_TABLE_NAME")
 db_table = dynamodb.Table(table_name)
 
 # ----------------------         Main Page         ----------------------------
@@ -48,7 +48,7 @@ def submit_order():
                 'amount': amount,
             }
         )
-        log.info('Request saved in database')
+        logging.info('Request saved in database')
         
         # Send a message to the SNS topic
         sns_client.publish(
@@ -64,7 +64,7 @@ def submit_order():
                 }
             }
         )
-        log.info(f'Message sent to {topic_arn}')
+        logging.info(f'Message sent to {topic_arn}')
         
         
         return redirect(url_for('request_page', request_id=id))
@@ -82,7 +82,7 @@ def request_page(request_id):
     response = db_table.get_item(
         Key={ 'id': str(request_id) }
     )
-    return render_template('request.html', response=response['Item'])
+    return render_template('order.html', response=response['Item'])
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False)

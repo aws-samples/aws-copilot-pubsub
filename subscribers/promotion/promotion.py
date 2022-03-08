@@ -1,9 +1,12 @@
 import os
+import sys
 import json
+import uuid
 import boto3
 import logging
 
-logger = logging.getLogger()
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
 aws_region = os.getenv("AWS_DEFAULT_REGION", default='eu-west-1')
 sqs_client = boto3.client('sqs', region_name=aws_region)
 
@@ -18,27 +21,28 @@ def delete_message(queue_uri, receipt):
         return sqs_client.delete_message(QueueUrl=queue_uri, 
                                          ReceiptHandle=receipt)
     except boto3.ClientError:
-        logger.exception(f'Error deleting the message from {queue_uri}')
+        logging.exception(f'Error deleting the message from {queue_uri}')
     
 def process_message():
     queue_uri = os.environ.get('COPILOT_QUEUE_URI')
     
-    logger.info('Inside ECS')
-    
     # Process messages
     for message in get_messages(queue_uri):
-        print('Wowowow')
+        logging.info('Processing message Received from SNS')
         
         # Print out the name  with a slanted effect
-        name = json.loads(message['Body'])['Message']
-        print(name)
-        logger.info(name)
+        coupon_code = str(uuid.uuid4())[:8]
+        message_body = json.loads(message['Body'])['Message']
+        customer_name = json.loads(message_body)['customer']
+        
+        logging.info(f'\n Hey {customer_name}!\n Thanks for your order, you ' +\
+            "have qualified for a 20% off on your next purchase.\n" +\
+            f"Use coupon --- {coupon_code} --- on you next purchase.")
         
         # Message is processed, delete it from the queue
-        #delete_message(queue_uri, message.get('ReceiptHandle'))
+        delete_message(queue_uri, message.get('ReceiptHandle'))
         
 
 if __name__ == '__main__':
     while True:
-        print('KK')
         process_message()

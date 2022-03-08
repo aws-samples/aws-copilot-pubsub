@@ -1,10 +1,12 @@
 import os
+import sys
 import json
 import boto3
 import logging
 import pyfiglet
 
-logger = logging.getLogger()
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 slant = pyfiglet.Figlet(font='slant')
 aws_region = os.getenv("AWS_DEFAULT_REGION", default='eu-west-1')
 sqs_client = boto3.client('sqs', region_name=aws_region)
@@ -20,23 +22,22 @@ def delete_message(queue_uri, receipt):
         return sqs_client.delete_message(QueueUrl=queue_uri, 
                                          ReceiptHandle=receipt)
     except boto3.ClientError:
-        logger.exception(f'Error deleting the message from {queue_uri}')
+        logging.exception(f'Error deleting the message from {queue_uri}')
     
 def process_message():
     queue_uri = os.environ.get('COPILOT_QUEUE_URI')
     
-    logger.info('Inside ECS')
-    
     # Process messages
     for message in get_messages(queue_uri):
-        logger.info('Processing message {message}')
         
         # Print out the name  with a slanted effect
-        name = json.loads(message['Body'])['Message']
-        logger.info(slant.renderText(name))
+        message_body = json.loads(message['Body'])['Message']
+        customer_name = json.loads(message_body)['customer']
+        logging.info('Processing order for: \n')
+        logging.info('\n' + slant.renderText(customer_name))
         
         # Message is processed, delete it from the queue
-        #delete_message(queue_uri, message.get('ReceiptHandle'))
+        delete_message(queue_uri, message.get('ReceiptHandle'))
         
 
 if __name__ == '__main__':
