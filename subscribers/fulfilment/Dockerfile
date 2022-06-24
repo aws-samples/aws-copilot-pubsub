@@ -12,4 +12,4 @@ RUN pip3 install -r requirements.txt
 COPY . /app
 
 # Start the service
-CMD ["python3", "invoicing.py"]
+CMD ["python3", "fulfilment.py"]

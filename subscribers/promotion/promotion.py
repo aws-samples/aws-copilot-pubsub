@@ -1,3 +1,6 @@
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
 import os
 import sys
 import json
@@ -5,21 +8,26 @@ import uuid
 import boto3
 import logging
 
+# ------------       Global config        -----------------
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
 aws_region = os.getenv("AWS_DEFAULT_REGION", default='eu-west-1')
 sqs_client = boto3.client('sqs', region_name=aws_region)
 
-def get_messages(uri):
-    messages = sqs_client.receive_message(QueueUrl=uri, 
+# ------------       Main functions       -----------------
+def get_messages(queue_uri):
+    """
+    Long-polls the specified Queue, returning zero up to 10 messages.
+    """
+    messages = sqs_client.receive_message(QueueUrl=queue_uri, 
                                           WaitTimeSeconds=5)
     
     return messages.get('Messages', [])
 
-def delete_message(queue_uri, receipt):
+def delete_message(message, queue_uri):
+    """Deletes a message from the specified queue"""
     try:
         return sqs_client.delete_message(QueueUrl=queue_uri, 
-                                         ReceiptHandle=receipt)
+                                         ReceiptHandle=message.get('ReceiptHandle'))
     except boto3.ClientError:
         logging.exception(f'Error deleting the message from {queue_uri}')
     
@@ -40,9 +48,10 @@ def process_message():
             f"Use coupon --- {coupon_code} --- on you next purchase.")
         
         # Message is processed, delete it from the queue
-        delete_message(queue_uri, message.get('ReceiptHandle'))
+        delete_message(message, queue_uri)
         
-
+        
+# --------------        Entrypoint      -------------------
 if __name__ == '__main__':
     while True:
         process_message()

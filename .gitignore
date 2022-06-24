@@ -1,4 +1,11 @@
-copilot/*
+# macOS Internals
 .DS_Store
+
+# VSCode 
 .workspace
+
+# Copilot Generated files
+copilot/*
+
+# Dependencies
 node_modules/

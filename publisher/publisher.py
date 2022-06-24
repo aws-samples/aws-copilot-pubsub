@@ -1,4 +1,7 @@
-import random
+# Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+# SPDX-License-Identifier: MIT-0
+
+# -------------       Imports      ------------------------
 from flask import Flask, request, render_template, redirect, url_for
 import os
 import sys
@@ -6,27 +9,26 @@ import json
 import uuid
 import boto3
 import names
+import random
 import logging
 
+# ------------       Global config        -----------------
 app = Flask(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-
 aws_region = os.getenv("AWS_DEFAULT_REGION", default='eu-west-1')
 
-# --------------------    SNS (Message sending)     ---------------------------
+# ------------    SNS (Message sending)     ---------------
 sns_client = boto3.client('sns', region_name=aws_region)
 dest_topic_name = 'ordersTopic'
 sns_topics_arn = json.loads(os.getenv("COPILOT_SNS_TOPIC_ARNS"))
 topic_arn = sns_topics_arn[dest_topic_name]
-# sns = boto3.resource('sns', region_name=aws_region)
-# topic = sns.Topic(sns_topics_arn[dest_topic_name])
 
-# ------------------    DynamoDB (NoSQL Database)     -------------------------
+# ---------    DynamoDB (NoSQL Database)     --------------
 dynamodb = boto3.resource('dynamodb', region_name=aws_region)
 table_name = os.getenv("ORDERS_TABLE_NAME")
 db_table = dynamodb.Table(table_name)
 
-# ----------------------         Main Page         ----------------------------
+# ----------        Main Page         ---------------------
 @app.route('/', methods=["GET", "POST"])
 def submit_order():
 
@@ -76,7 +78,7 @@ def submit_order():
        
     return render_template('index.html', customer=name, amount=amount)
 
-# -------------------      Request Redirection Page      ------------------------
+# ------------      Request Redirection Page      -------------------
 @app.route('/request/<uuid:request_id>')
 def request_page(request_id):
     response = db_table.get_item(
