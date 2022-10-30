@@ -1,2 +1,2 @@
-boto3
-pyfiglet
+boto3==1.25.4
+pyfiglet==0.8.post1
