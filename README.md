@@ -13,7 +13,7 @@ You can easily build a sample pub/sub architecture by leveraging the AWS Copilot
 
 A technical how-to blog tutorial on the deployment can be found here:
 
-- https://aws.amazon.com/blogs/containers/tag/aws-copilot/
+- https://aws.amazon.com/blogs/containers/implementing-a-pub-sub-architecture-with-aws-copilot/
 
 ## Releases
 
